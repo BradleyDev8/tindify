@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { SpotifyTrack } from "@/types/types";
 
 /**
@@ -66,22 +67,26 @@ export async function searchTracks(query: string): Promise<SpotifyTrack[]> {
   return data.tracks.items;
 }
 
-export async function getTopTracks(): Promise<SpotifyTrack[]> {
-  const cookieStore = cookies();
-  const accessToken = cookieStore.get("access_token")?.value;
+export const getTopTracks = unstable_cache(
+  async (): Promise<SpotifyTrack[]> => {
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get("access_token")?.value;
 
-  if (!accessToken) {
-    throw new Error("No access token found");
-  }
+    if (!accessToken) {
+      throw new Error("No access token found");
+    }
 
-  try {
-    const data = await fetchFromSpotify("/me/top/tracks", accessToken);
-    return data.items;
-  } catch (error) {
-    console.error("Error fetching top tracks:", error);
-    throw error;
-  }
-}
+    try {
+      const data = await fetchFromSpotify("/me/top/tracks", accessToken);
+      return data.items;
+    } catch (error) {
+      console.error("Error fetching top tracks:", error);
+      throw error;
+    }
+  },
+  ["top-tracks"],
+  { revalidate: 86400, tags: ["top-tracks"] }
+);
 
 export async function getRecommendation(
   seedTrackId?: string,
