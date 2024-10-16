@@ -3,19 +3,13 @@
 import { cookies } from "next/headers";
 import { SpotifyTrack } from "@/types/types";
 
-const API_ENDPOINT = "https://api.spotify.com/v1";
-
 /**
  * Fetches data from the Spotify API.
  * @param {string} endpoint - The specific API endpoint to fetch data from.
  * @param {string} accessToken - The access token for authorization.
  * @returns {Promise<any>} The JSON response from the API.
  */
-async function fetchFromSpotify(
-  endpoint: string,
-  accessToken: string,
-  options: RequestInit = {}
-) {
+async function fetchFromSpotify(endpoint: string, accessToken: string, options: RequestInit = {}) {
   const url = `https://api.spotify.com/v1${endpoint}`;
   console.log(`Fetching from Spotify: ${url}`);
 
@@ -34,22 +28,16 @@ async function fetchFromSpotify(
 
     if (response.status === 429) {
       const retryAfter = response.headers.get("Retry-After");
-      const waitTime = retryAfter
-        ? parseInt(retryAfter) * 1000
-        : 1000 * 2 ** retries;
+      const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 1000 * 2 ** retries;
       console.log(`Rate limited. Retrying after ${waitTime}ms`);
       await new Promise((resolve) => setTimeout(resolve, waitTime));
       retries++;
     } else if (!response.ok) {
       const errorBody = await response.text();
-      console.error(
-        `Spotify API error: ${response.status} ${response.statusText}`
-      );
+      console.error(`Spotify API error: ${response.status} ${response.statusText}`);
       console.error(`Error body: ${errorBody}`);
       console.error(`Request URL: ${url}`);
-      throw new Error(
-        `Spotify API error: ${response.status} ${response.statusText}. ${errorBody}`
-      );
+      throw new Error(`Spotify API error: ${response.status} ${response.statusText}. ${errorBody}`);
     } else {
       return response.json();
     }
@@ -95,7 +83,10 @@ export async function getTopTracks(): Promise<SpotifyTrack[]> {
   }
 }
 
-export async function getRecommendation(): Promise<SpotifyTrack> {
+export async function getRecommendation(
+  seedTrackId?: string,
+  seedGenres?: string[]
+): Promise<SpotifyTrack> {
   const cookieStore = cookies();
   const accessToken = cookieStore.get("access_token")?.value;
 
@@ -104,20 +95,24 @@ export async function getRecommendation(): Promise<SpotifyTrack> {
   }
 
   try {
-    const data = await fetchFromSpotify(
-      "/recommendations?limit=1&seed_genres=hip-hop,rock,pop,electronic",
-      accessToken
-    );
+    let endpoint = "/recommendations?limit=1";
+
+    if (seedTrackId) {
+      endpoint += `&seed_tracks=${seedTrackId}`;
+    } else if (seedGenres && seedGenres.length > 0) {
+      endpoint += `&seed_genres=${seedGenres.join(",")}`;
+    } else {
+      endpoint += "&seed_genres=pop,rock,hip-hop,electronic";
+    }
+
+    const data = await fetchFromSpotify(endpoint, accessToken);
     if (!data.tracks || data.tracks.length === 0) {
       throw new Error("No tracks returned from recommendation");
     }
     return data.tracks[0];
   } catch (error) {
     console.error("Error getting recommendation:", error);
-    if (
-      error instanceof Error &&
-      error.message.includes("Max retries reached")
-    ) {
+    if (error instanceof Error && error.message.includes("Max retries reached")) {
       throw new Error(
         "Unable to get track recommendation due to rate limiting. Please try again later."
       );
@@ -126,10 +121,7 @@ export async function getRecommendation(): Promise<SpotifyTrack> {
   }
 }
 
-export async function saveTrack(
-  trackId: string,
-  playlistId: string
-): Promise<void> {
+export async function saveTrack(trackId: string, playlistId: string): Promise<void> {
   const cookieStore = cookies();
   const accessToken = cookieStore.get("access_token")?.value;
 
@@ -152,14 +144,10 @@ export async function createPlaylist(name: string): Promise<string> {
   }
 
   const userData = await fetchFromSpotify("/me", accessToken);
-  const playlist = await fetchFromSpotify(
-    `/users/${userData.id}/playlists`,
-    accessToken,
-    {
-      method: "POST",
-      body: JSON.stringify({ name, public: false }),
-    }
-  );
+  const playlist = await fetchFromSpotify(`/users/${userData.id}/playlists`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ name, public: false }),
+  });
 
   return playlist.id;
 }
@@ -171,5 +159,22 @@ export async function stopPlayback(accessToken: string): Promise<void> {
     });
   } catch (error) {
     console.error("Error stopping playback:", error);
+  }
+}
+
+export async function getAvailableGenres(): Promise<string[]> {
+  const cookieStore = cookies();
+  const accessToken = cookieStore.get("access_token")?.value;
+
+  if (!accessToken) {
+    throw new Error("No access token found");
+  }
+
+  try {
+    const data = await fetchFromSpotify("/recommendations/available-genre-seeds", accessToken);
+    return data.genres;
+  } catch (error) {
+    console.error("Error fetching available genres:", error);
+    throw error;
   }
 }

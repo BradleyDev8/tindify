@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SearchForm } from "@/components/SearchForm";
 import { SignOutButton } from "@/components/SignOutButton";
 import { TopTracks } from "@/components/TopTracks";
 

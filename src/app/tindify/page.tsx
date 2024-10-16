@@ -30,13 +30,9 @@ export default async function SpotifyTinderPage() {
 async function TindifyContent({ accessToken }: { accessToken: string }) {
   try {
     const initialTrack = await getRecommendation();
-    return (
-      <TindifyComponent initialTrack={initialTrack} accessToken={accessToken} />
-    );
+    return <TindifyComponent initialTrack={initialTrack} accessToken={accessToken} />;
   } catch (error) {
     console.error("Error fetching initial track:", error);
-    return (
-      <div>Error: Failed to load initial track. Please try again later.</div>
-    );
+    return <div>Error: Failed to load initial track. Please try again later.</div>;
   }
 }
