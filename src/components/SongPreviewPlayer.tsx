@@ -29,19 +29,19 @@ export function SongPlayer({ track, accessToken }: SongPlayerProps) {
       },
     });
 
-    newPlayer.addListener("ready", ({ device_id }) => {
+    newPlayer.addListener("ready", ({ device_id }: { device_id: string }) => {
       console.log("Player ready with Device ID", device_id);
       setDeviceId(device_id);
       setIsReady(true);
       setIsPlayerReady(true);
     });
 
-    newPlayer.addListener("not_ready", ({ device_id }) => {
+    newPlayer.addListener("not_ready", ({ device_id }: { device_id: string }) => {
       console.log("Device ID has gone offline", device_id);
       setIsReady(false);
     });
 
-    newPlayer.addListener("player_state_changed", (state) => {
+    newPlayer.addListener("player_state_changed", (state: Spotify.PlaybackState | null) => {
       console.log("Player state changed", state);
       if (state) {
         setIsPlaying(!state.paused);
@@ -99,6 +99,7 @@ export function SongPlayer({ track, accessToken }: SongPlayerProps) {
         player.disconnect();
       }
     };
+    // eslint-disable-next-line
   }, [initializePlayer]);
 
   useEffect(() => {

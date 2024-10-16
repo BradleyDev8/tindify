@@ -14,6 +14,7 @@ import { SongSelector } from "@/components/SongSelector";
 import { GenreSelector } from "@/components/GenreSelector";
 import { AlbumCoverSkeleton } from "@/components/AlbumSkeleton";
 import { FaHeart, FaHeartBroken } from "react-icons/fa";
+import Image from "next/image";
 
 interface TindifyComponentProps {
   initialTrack: SpotifyTrack;
@@ -147,9 +148,11 @@ export function TindifyComponent({ initialTrack, accessToken }: TindifyComponent
           <AlbumCoverSkeleton />
         ) : (
           currentTrack.album.images[0] && (
-            <img
+            <Image
               src={currentTrack.album.images[0].url}
               alt={`${currentTrack.name} album cover`}
+              width={256}
+              height={256}
               className="w-48 h-48 sm:w-64 sm:h-64 object-cover mt-4 shadow-sm rounded-lg shadow-green-400"
             />
           )

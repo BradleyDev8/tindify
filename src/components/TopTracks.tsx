@@ -1,5 +1,6 @@
 import { getTopTracks } from "@/app/actions";
 import { SpotifyTrack } from "@/types/types";
+import Image from "next/image";
 
 export async function TopTracks() {
   let topTracks: SpotifyTrack[] | null = null;
@@ -7,7 +8,7 @@ export async function TopTracks() {
 
   try {
     topTracks = await getTopTracks();
-  } catch (e) {
+  } catch {
     error = "Failed to fetch top tracks. Please try again later.";
   }
 
@@ -30,16 +31,16 @@ export async function TopTracks() {
           >
             <div className="flex items-center">
               {track.album.images[0] && (
-                <img
+                <Image
                   src={track.album.images[0].url}
                   alt={`${track.name} album cover`}
+                  width={64}
+                  height={64}
                   className="w-16 h-16 object-cover rounded-md mr-4"
                 />
               )}
               <div>
-                <h3 className="text-lg font-semibold text-gray-200">
-                  {track.name}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-200">{track.name}</h3>
                 <p className="text-sm text-gray-400">
                   {track.artists.map((artist) => artist.name).join(", ")}
                 </p>

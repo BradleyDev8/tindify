@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Suspense } from "react";
 import { SpotifySDKScript } from "@/components/SpotifySDKScript";
 
 const geistSans = localFont({
